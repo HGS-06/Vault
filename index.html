@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vault">
+<link rel="manifest" href="manifest.json">
+<title>Knowledge Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --surface3: #22222f;
+  --border: #2a2a3a;
+  --accent: #7c6dfa;
+  --accent2: #fa6d9a;
+  --accent3: #6dfacc;
+  --text: #e8e8f0;
+  --text2: #8888aa;
+  --text3: #555570;
+  --link-color: #9d91fc;
+  --tag-bg: rgba(124,109,250,0.15);
+  --tag-border: rgba(124,109,250,0.4);
+  --glow: 0 0 20px rgba(124,109,250,0.3);
+  --radius: 12px;
+  --header-h: 56px;
+  --nav-h: 60px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+}
+
+/* ── Layout ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+#header {
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+#header .logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+
+#header .logo span { color: var(--accent2); }
+
+#search-bar {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#search-bar:focus { border-color: var(--accent); }
+#search-bar::placeholder { color: var(--text3); }
+
+#btn-new {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.1s;
+}
+#btn-new:active { transform: scale(0.93); background: #6a5ce8; }
+
+/* ── Content area ── */
+#content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Panels (Views) ── */
+.panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel.active { display: flex; }
+
+/* ── Notes List ── */
+.note-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+.note-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.note-card:active { transform: scale(0.98); }
+.note-card:hover::before, .note-card:active::before { opacity: 1; }
+.note-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note-card .preview {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.note-card .meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.tag {
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  color: var(--accent);
+  font-family: 'Fira Code', monospace;
+}
+.note-date {
+  font-size: 11px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 200px;
+  color: var(--text3);
+  text-align: center;
+}
+.empty-state .icon { font-size: 40px; opacity: 0.4; }
+.empty-state p { font-size: 13px; line-height: 1.6; }
+
+/* ── Editor ── */
+#panel-editor {
+  padding: 0;
+  background: var(--bg);
+}
+
+#editor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#btn-back {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex; align-items: center;
+}
+
+#note-title {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  outline: none;
+}
+#note-title::placeholder { color: var(--text3); }
+
+#btn-save {
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  padding: 7px 14px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#btn-save:active { background: #6a5ce8; }
+
+#btn-delete {
+  background: none;
+  border: none;
+  color: var(--accent2);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex; align-items: center;
+}
+
+#tags-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.tag-chip {
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--accent);
+  display: flex; align-items: center; gap: 5px;
+  cursor: pointer;
+}
+.tag-chip .remove { color: var(--accent2); font-size: 14px; }
+
+#tags-input {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  outline: none;
+  min-width: 100px;
+}
+#tags-input::placeholder { color: var(--text3); }
+
+#note-content {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  outline: none;
+  resize: none;
+  padding: 16px;
+  width: 100%;
+  height: 100%;
+}
+
+#editor-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Backlinks panel */
+#backlinks-section {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#backlinks-section h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.backlink-item {
+  font-size: 12px;
+  color: var(--link-color);
+  padding: 5px 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.backlink-item:last-child { border-bottom: none; }
+
+/* ── Graph View ── */
+#panel-graph {
+  padding: 0;
+  background: var(--bg);
+  flex-direction: column;
+}
+
+#graph-canvas {
+  flex: 1;
+  width: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#graph-legend {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── Bottom Nav ── */
+#nav {
+  height: var(--nav-h);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.nav-btn {
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--text3);
+  transition: color 0.2s;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+}
+.nav-btn .nav-icon { font-size: 20px; transition: transform 0.2s; }
+.nav-btn.active { color: var(--accent); }
+.nav-btn.active .nav-icon { transform: translateY(-2px); }
+
+/* ── Search Results ── */
+.search-result-note {
+  border-left: 2px solid var(--accent);
+}
+.search-highlight { color: var(--accent3); background: rgba(109,250,204,0.1); border-radius: 2px; }
+
+/* ── Rendered markdown-lite in preview ── */
+.wiki-link { color: var(--link-color); text-decoration: none; cursor: pointer; }
+.wiki-link:hover { text-decoration: underline; }
+
+/* ── Confirm Modal ── */
+#confirm-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+#confirm-modal.show { display: flex; }
+#confirm-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  padding: 24px 20px 32px;
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+}
+#confirm-box p {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+#confirm-box .sub {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: 'Fira Code', monospace;
+  margin-bottom: 22px;
+}
+#confirm-box .btn-row {
+  display: flex;
+  gap: 10px;
+}
+#confirm-cancel {
+  flex: 1;
+  padding: 13px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text2);
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  cursor: pointer;
+}
+#confirm-ok {
+  flex: 1;
+  padding: 13px;
+  background: var(--accent2);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  bottom: calc(var(--nav-h) + 16px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Note count badge ── */
+.note-count {
+  font-size: 11px;
+  color: var(--text3);
+  padding: 0 16px 8px;
+  flex-shrink: 0;
+}
+
+/* ── Slide transition ── */
+.panel { transition: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <div id="header">
+    <div class="logo">vault<span>.</span></div>
+    <input id="search-bar" type="text" placeholder="search notes..." autocomplete="off" spellcheck="false">
+    <button id="btn-new" title="New note">+</button>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- Notes List -->
+    <div id="panel-list" class="panel active">
+      <div class="note-count" id="note-count"></div>
+      <div id="notes-container"></div>
+    </div>
+
+    <!-- Editor -->
+    <div id="panel-editor" class="panel">
+      <div id="editor-header">
+        <button id="btn-back">←</button>
+        <input id="note-title" type="text" placeholder="Untitled note" autocomplete="off" spellcheck="true">
+        <button id="btn-delete">🗑</button>
+        <button id="btn-save">save</button>
+      </div>
+      <div id="tags-input-row">
+        <span style="font-size:11px;color:var(--text3);">tags:</span>
+        <div id="tags-chips"></div>
+        <input id="tags-input" type="text" placeholder="add tag + enter">
+      </div>
+      <div id="editor-body">
+        <textarea id="note-content" placeholder="Start writing... Use [[Note Title]] to link notes.&#10;&#10;Tip: [[links]] create connections in the graph view."></textarea>
+        <div id="backlinks-section" style="display:none">
+          <h4>↩ backlinks</h4>
+          <div id="backlinks-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph View -->
+    <div id="panel-graph" class="panel">
+      <canvas id="graph-canvas"></canvas>
+      <div id="graph-legend">tap a node to open note · drag to pan · pinch to zoom</div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav id="nav">
+    <button class="nav-btn active" data-view="list">
+      <span class="nav-icon">☰</span>
+      <span>notes</span>
+    </button>
+    <button class="nav-btn" data-view="graph">
+      <span class="nav-icon">◎</span>
+      <span>graph</span>
+    </button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+<div id="confirm-modal">
+  <div id="confirm-box">
+    <p>Delete this note?</p>
+    <div class="sub" id="confirm-note-title"></div>
+    <div class="btn-row">
+      <button id="confirm-cancel">cancel</button>
+      <button id="confirm-ok">delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DB
+// ─────────────────────────────────────────────
+const DB_NAME = 'knowledgeVault';
+const DB_VERSION = 1;
+let db;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('notes')) {
+        const store = d.createObjectStore('notes', { keyPath: 'id' });
+        store.createIndex('updatedAt', 'updatedAt');
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function txn(mode, fn) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('notes', mode);
+    const store = tx.objectStore('notes');
+    const req = fn(store);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function getAllNotes() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('notes', 'readonly');
+    const req = tx.objectStore('notes').getAll();
+    req.onsuccess = () => res(req.result.sort((a,b) => b.updatedAt - a.updatedAt));
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function saveNote(note) { return txn('readwrite', s => s.put(note)); }
+function deleteNote(id) { return txn('readwrite', s => s.delete(id)); }
+function getNote(id) { return txn('readonly', s => s.get(id)); }
+
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+let allNotes = [];
+let currentNote = null;
+let currentTags = [];
+let activeView = 'list';
+let searchQuery = '';
+
+// ─────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function parseLinks(content) {
+  const matches = content.match(/\[\[([^\]]+)\]\]/g) || [];
+  return [...new Set(matches.map(m => m.slice(2, -2).trim()))];
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  if (diff < 604800000) return Math.floor(diff/86400000) + 'd ago';
+  return d.toLocaleDateString();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toast(msg, dur=2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ─────────────────────────────────────────────
+// Search
+// ─────────────────────────────────────────────
+function highlight(text, q) {
+  if (!q) return escHtml(text);
+  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return escHtml(text).replace(re, '<span class="search-highlight">$1</span>');
+}
+
+function filterNotes(notes, q) {
+  if (!q) return notes;
+  const lq = q.toLowerCase();
+  return notes.filter(n =>
+    n.title.toLowerCase().includes(lq) ||
+    n.content.toLowerCase().includes(lq) ||
+    (n.tags||[]).some(t => t.toLowerCase().includes(lq))
+  );
+}
+
+// ─────────────────────────────────────────────
+// Render Notes List
+// ─────────────────────────────────────────────
+function renderList() {
+  const container = document.getElementById('notes-container');
+  const countEl = document.getElementById('note-count');
+  const filtered = filterNotes(allNotes, searchQuery);
+
+  countEl.textContent = searchQuery
+    ? `${filtered.length} of ${allNotes.length} notes`
+    : `${allNotes.length} note${allNotes.length !== 1 ? 's' : ''}`;
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="icon">${searchQuery ? '🔍' : '📝'}</div>
+      <p>${searchQuery ? 'No notes match "' + escHtml(searchQuery) + '"' : 'No notes yet.<br>Tap + to create your first note.'}</p>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(n => {
+    const previewText = n.content.replace(/\[\[([^\]]+)\]\]/g, '$1').slice(0,120);
+    const tagsHtml = (n.tags||[]).slice(0,3).map(t =>
+      `<span class="tag">#${escHtml(t)}</span>`
+    ).join('');
+    const linkCount = (n.links||[]).length;
+    const linkedBadge = linkCount ? `<span class="tag" style="background:rgba(109,250,204,0.1);border-color:rgba(109,250,204,0.4);color:var(--accent3);">⇝ ${linkCount}</span>` : '';
+    return `<div class="note-card${searchQuery?' search-result-note':''}" data-id="${n.id}">
+      <h3>${highlight(n.title || 'Untitled', searchQuery)}</h3>
+      <div class="preview">${highlight(previewText, searchQuery)}</div>
+      <div class="meta">${tagsHtml}${linkedBadge}<span class="note-date">${formatDate(n.updatedAt)}</span></div>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('.note-card').forEach(card => {
+    card.addEventListener('click', () => openNote(card.dataset.id));
+  });
+}
+
+// ─────────────────────────────────────────────
+// Editor
+// ─────────────────────────────────────────────
+function openNote(id) {
+  currentNote = allNotes.find(n => n.id === id) || null;
+  if (!currentNote) return;
+  currentTags = [...(currentNote.tags || [])];
+
+  document.getElementById('note-title').value = currentNote.title || '';
+  document.getElementById('note-content').value = currentNote.content || '';
+  renderTagChips();
+  renderBacklinks(id);
+
+  showView('editor');
+}
+
+function newNote() {
+  currentNote = {
+    id: uid(),
+    title: '',
+    content: '',
+    tags: [],
+    links: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  currentTags = [];
+  document.getElementById('note-title').value = '';
+  document.getElementById('note-content').value = '';
+  renderTagChips();
+  document.getElementById('backlinks-section').style.display = 'none';
+  showView('editor');
+  setTimeout(() => document.getElementById('note-title').focus(), 100);
+}
+
+async function saveCurrentNote() {
+  if (!currentNote) return;
+  const title = document.getElementById('note-title').value.trim() || 'Untitled';
+  const content = document.getElementById('note-content').value;
+  const links = parseLinks(content);
+
+  currentNote = {
+    ...currentNote,
+    title,
+    content,
+    tags: [...currentTags],
+    links,
+    updatedAt: Date.now()
+  };
+
+  await saveNote(currentNote);
+  allNotes = await getAllNotes();
+  toast('✓ saved');
+  renderList();
+}
+
+function deleteCurrentNote() {
+  if (!currentNote) return;
+  document.getElementById('confirm-note-title').textContent = currentNote.title || 'Untitled';
+  document.getElementById('confirm-modal').classList.add('show');
+}
+
+async function confirmDelete() {
+  document.getElementById('confirm-modal').classList.remove('show');
+  if (!currentNote) return;
+  await deleteNote(currentNote.id);
+  allNotes = await getAllNotes();
+  currentNote = null;
+  showView('list');
+  renderList();
+  toast('deleted');
+}
+
+function renderTagChips() {
+  const chips = document.getElementById('tags-chips');
+  chips.innerHTML = currentTags.map((t,i) =>
+    `<span class="tag-chip" data-i="${i}">#${escHtml(t)}<span class="remove">×</span></span>`
+  ).join('');
+  chips.querySelectorAll('.tag-chip').forEach(chip => {
+    chip.querySelector('.remove').addEventListener('click', () => {
+      currentTags.splice(parseInt(chip.dataset.i), 1);
+      renderTagChips();
+    });
+  });
+}
+
+function renderBacklinks(noteId) {
+  const note = allNotes.find(n => n.id === noteId);
+  if (!note) return;
+  const title = note.title || 'Untitled';
+  const backlinked = allNotes.filter(n =>
+    n.id !== noteId && (n.links||[]).some(l => l.toLowerCase() === title.toLowerCase())
+  );
+  const section = document.getElementById('backlinks-section');
+  const list = document.getElementById('backlinks-list');
+  if (!backlinked.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = backlinked.map(n =>
+    `<div class="backlink-item" data-id="${n.id}">← ${escHtml(n.title || 'Untitled')}</div>`
+  ).join('');
+  list.querySelectorAll('.backlink-item').forEach(item => {
+    item.addEventListener('click', () => openNote(item.dataset.id));
+  });
+}
+
+// ─────────────────────────────────────────────
+// Graph
+// ─────────────────────────────────────────────
+const graph = (() => {
+  let nodes = [], edges = [];
+  let offsetX = 0, offsetY = 0, scale = 1;
+  let dragging = false, lastX, lastY;
+  let pinching = false, lastDist = 0;
+  let canvas, ctx, animId;
+  let width, height;
+  const NODE_R = 22;
+  const COLORS = ['#7c6dfa','#fa6d9a','#6dfacc','#facc6d','#fa9b6d'];
+
+  function buildGraph() {
+    nodes = allNotes.map((n, i) => ({
+      id: n.id,
+      title: n.title || 'Untitled',
+      tags: n.tags || [],
+      color: COLORS[i % COLORS.length],
+      x: Math.random() * 300 - 150,
+      y: Math.random() * 300 - 150,
+      vx: 0, vy: 0,
+      links: n.links || []
+    }));
+    edges = [];
+    for (const node of nodes) {
+      for (const linkTitle of node.links) {
+        const target = nodes.find(n => n.title.toLowerCase() === linkTitle.toLowerCase());
+        if (target && target.id !== node.id) {
+          edges.push({ from: node, to: target });
+        }
+      }
+    }
+  }
+
+  function layout() {
+    const k = 150;
+    const gravity = 0.05;
+
+    // Repulsion
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i+1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.sqrt(dx*dx + dy*dy) || 1;
+        const f = k*k / d;
+        dx /= d; dy /= d;
+        a.vx -= dx*f*0.2; a.vy -= dy*f*0.2;
+        b.vx += dx*f*0.2; b.vy += dy*f*0.2;
+      }
+    }
+
+    // Attraction along edges
+    for (const e of edges) {
+      const dx = e.to.x - e.from.x;
+      const dy = e.to.y - e.from.y;
+      const d = Math.sqrt(dx*dx + dy*dy) || 1;
+      const f = (d - k) / k * 0.3;
+      e.from.vx += dx/d*f; e.from.vy += dy/d*f;
+      e.to.vx -= dx/d*f; e.to.vy -= dy/d*f;
+    }
+
+    // Gravity towards center
+    for (const n of nodes) {
+      n.vx -= n.x * gravity;
+      n.vy -= n.y * gravity;
+    }
+
+    // Apply
+    for (const n of nodes) {
+      n.vx *= 0.7; n.vy *= 0.7;
+      n.x += n.vx; n.y += n.vy;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.translate(width/2 + offsetX, height/2 + offsetY);
+    ctx.scale(scale, scale);
+
+    // Edges
+    for (const e of edges) {
+      ctx.beginPath();
+      ctx.moveTo(e.from.x, e.from.y);
+      ctx.lineTo(e.to.x, e.to.y);
+      ctx.strokeStyle = 'rgba(124,109,250,0.25)';
+      ctx.lineWidth = 1.5 / scale;
+      ctx.stroke();
+    }
+
+    // Nodes
+    for (const n of nodes) {
+      // Glow
+      const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, NODE_R * 2);
+      grad.addColorStop(0, n.color + '55');
+      grad.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, NODE_R * 1.5, 0, Math.PI*2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, NODE_R, 0, Math.PI*2);
+      ctx.fillStyle = '#111118';
+      ctx.fill();
+      ctx.strokeStyle = n.color;
+      ctx.lineWidth = 2 / scale;
+      ctx.stroke();
+
+      // Initial
+      ctx.fillStyle = n.color;
+      ctx.font = `bold ${14/scale}px Syne, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.title[0]?.toUpperCase() || '?', n.x, n.y);
+
+      // Label
+      ctx.fillStyle = '#8888aa';
+      ctx.font = `${11/scale}px Fira Code, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const labelText = n.title.length > 12 ? n.title.slice(0,10)+'…' : n.title;
+      ctx.fillText(labelText, n.x, n.y + NODE_R + 4/scale);
+    }
+
+    ctx.restore();
+    layout();
+    animId = requestAnimationFrame(draw);
+  }
+
+  function init() {
+    canvas = document.getElementById('graph-canvas');
+    ctx = canvas.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+    bindEvents();
+    buildGraph();
+    if (animId) cancelAnimationFrame(animId);
+    draw();
+  }
+
+  function resize() {
+    if (!canvas) return;
+    width = canvas.offsetWidth;
+    height = canvas.offsetHeight;
+    canvas.width = width * devicePixelRatio;
+    canvas.height = height * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+
+  function getNodeAt(cx, cy) {
+    const wx = (cx - width/2 - offsetX) / scale;
+    const wy = (cy - height/2 - offsetY) / scale;
+    for (const n of nodes) {
+      if ((n.x-wx)**2 + (n.y-wy)**2 < (NODE_R+6)**2) return n;
+    }
+    return null;
+  }
+
+  function bindEvents() {
+    // Touch
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        pinching = true;
+        lastDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      } else if (e.touches.length === 1) {
+        dragging = true;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', e => {
+      if (pinching && e.touches.length === 2) {
+        const d = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        scale *= d / lastDist;
+        scale = Math.min(3, Math.max(0.3, scale));
+        lastDist = d;
+      } else if (dragging && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - lastX;
+        const dy = e.touches[0].clientY - lastY;
+        offsetX += dx; offsetY += dy;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', e => {
+      if (pinching && e.touches.length < 2) { pinching = false; return; }
+      if (!dragging) return;
+      dragging = false;
+      // Tap detection
+      if (e.changedTouches.length === 1) {
+        const t = e.changedTouches[0];
+        const rect = canvas.getBoundingClientRect();
+        const cx = t.clientX - rect.left;
+        const cy = t.clientY - rect.top;
+        const node = getNodeAt(cx, cy);
+        if (node) openNote(node.id);
+      }
+    });
+
+    // Mouse (desktop fallback)
+    canvas.addEventListener('mousedown', e => {
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      offsetX += e.clientX - lastX;
+      offsetY += e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    canvas.addEventListener('mouseup', e => {
+      dragging = false;
+      const rect = canvas.getBoundingClientRect();
+      const node = getNodeAt(e.clientX - rect.left, e.clientY - rect.top);
+      if (node) openNote(node.id);
+    });
+    canvas.addEventListener('wheel', e => {
+      scale *= e.deltaY < 0 ? 1.1 : 0.9;
+      scale = Math.min(3, Math.max(0.3, scale));
+    }, { passive: true });
+  }
+
+  function refresh() {
+    buildGraph();
+    offsetX = 0; offsetY = 0; scale = 1;
+  }
+
+  return { init, refresh };
+})();
+
+// ─────────────────────────────────────────────
+// View switching
+// ─────────────────────────────────────────────
+function showView(view) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  if (view === 'editor') {
+    document.getElementById('panel-editor').classList.add('active');
+    document.getElementById('header').style.display = 'none';
+    document.getElementById('nav').style.display = 'none';
+    activeView = 'editor';
+  } else {
+    document.getElementById('header').style.display = 'flex';
+    document.getElementById('nav').style.display = 'flex';
+    document.getElementById(`panel-${view}`).classList.add('active');
+    document.querySelector(`.nav-btn[data-view="${view}"]`).classList.add('active');
+    activeView = view;
+    if (view === 'graph') {
+      graph.refresh();
+      setTimeout(() => graph.init(), 50);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// Event Listeners
+// ─────────────────────────────────────────────
+document.getElementById('btn-new').addEventListener('click', newNote);
+
+document.getElementById('btn-back').addEventListener('click', async () => {
+  await saveCurrentNote();
+  showView('list');
+  renderList();
+});
+
+document.getElementById('btn-save').addEventListener('click', saveCurrentNote);
+document.getElementById('btn-delete').addEventListener('click', deleteCurrentNote);
+document.getElementById('confirm-ok').addEventListener('click', confirmDelete);
+document.getElementById('confirm-cancel').addEventListener('click', () => {
+  document.getElementById('confirm-modal').classList.remove('show');
+});
+document.getElementById('confirm-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirm-modal')) {
+    document.getElementById('confirm-modal').classList.remove('show');
+  }
+});
+
+document.getElementById('tags-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/^#/, '');
+    if (val && !currentTags.includes(val)) {
+      currentTags.push(val);
+      renderTagChips();
+    }
+    e.target.value = '';
+  }
+  if (e.key === 'Backspace' && !e.target.value && currentTags.length) {
+    currentTags.pop();
+    renderTagChips();
+  }
+});
+
+document.getElementById('search-bar').addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  renderList();
+});
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => showView(btn.dataset.view));
+});
+
+// Auto-save on content change (debounced)
+let saveTimer;
+document.getElementById('note-content').addEventListener('input', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveCurrentNote, 2000);
+});
+document.getElementById('note-title').addEventListener('input', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveCurrentNote, 2000);
+});
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+async function init() {
+  await openDB();
+  allNotes = await getAllNotes();
+
+  // Seed with welcome note
+  if (!allNotes.length) {
+    const welcome = {
+      id: uid(),
+      title: 'Welcome to Vault',
+      content: `Welcome to your personal Knowledge Vault! ✦
+
+**Getting started:**
+- Tap the + button to create a new note
+- Use [[Note Title]] syntax to link notes together
+- Add tags using the tag bar at the top of each note
+- Visit the Graph view to see your knowledge connections
+
+Try creating a note called "Ideas" and link to it from here with [[Ideas]].
+
+This vault lives entirely on your device — no cloud, no account needed.`,
+      tags: ['welcome', 'guide'],
+      links: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    await saveNote(welcome);
+    allNotes = await getAllNotes();
+  }
+
+  renderList();
+}
+
+init();
+</script>
+</body>
+</html>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
